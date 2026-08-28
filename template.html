@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>은행 뉴스 브리핑</title>
+<style>
+  :root{
+    --bg:#ffffff; --glow:rgba(0,0,0,.025);
+    --card:#ffffff; --text:#0a0a0a; --muted:#6e6e6e; --faint:#a6a6a6;
+    --line:#ededed; --line2:#dedede; --accent:#0a0a0a; --accent-soft:#f2f2f2;
+    --block-bg:#f6f6f6; --block-line:#0a0a0a;
+    --impact:#0a0a0a; --impact-bg:#f6f6f6; --sol:#0a0a0a; --sol-bg:#f6f6f6;
+    --term:#0a0a0a; --term-bg:#f6f6f6;
+    --hl:rgba(214,178,74,.30);
+    --radius:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0a0a0a; --glow:rgba(255,255,255,.035);
+      --card:#0f0f0f; --text:#f4f4f4; --muted:#9a9a9a; --faint:#5c5c5c;
+      --line:#1e1e1e; --line2:#2a2a2a; --accent:#f4f4f4; --accent-soft:#171717;
+      --block-bg:#151515; --block-line:#f4f4f4;
+      --impact:#f4f4f4; --impact-bg:#151515; --sol:#f4f4f4; --sol-bg:#151515;
+      --term:#f4f4f4; --term-bg:#151515;
+      --hl:rgba(224,196,110,.24);
+    }
+  }
+  /* 뷰어의 테마 토글이 미디어쿼리를 이기도록 명시 오버라이드 */
+  :root[data-theme="dark"]{
+    --bg:#0a0a0a; --glow:rgba(255,255,255,.035);
+    --card:#0f0f0f; --text:#f4f4f4; --muted:#9a9a9a; --faint:#5c5c5c;
+    --line:#1e1e1e; --line2:#2a2a2a; --accent:#f4f4f4; --accent-soft:#171717;
+    --block-bg:#151515; --block-line:#f4f4f4;
+    --impact:#f4f4f4; --impact-bg:#151515; --sol:#f4f4f4; --sol-bg:#151515;
+    --term:#f4f4f4; --term-bg:#151515; --hl:rgba(224,196,110,.24);
+  }
+  :root[data-theme="light"]{
+    --bg:#ffffff; --glow:rgba(0,0,0,.025);
+    --card:#ffffff; --text:#0a0a0a; --muted:#6e6e6e; --faint:#a6a6a6;
+    --line:#ededed; --line2:#dedede; --accent:#0a0a0a; --accent-soft:#f2f2f2;
+    --block-bg:#f6f6f6; --block-line:#0a0a0a;
+    --impact:#0a0a0a; --impact-bg:#f6f6f6; --sol:#0a0a0a; --sol-bg:#f6f6f6;
+    --term:#0a0a0a; --term-bg:#f6f6f6; --hl:rgba(214,178,74,.30);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(1100px 420px at 50% -160px, var(--glow), transparent);}
+  .wrap{max-width:900px;margin:0 auto;padding:40px 20px 90px}
+  /* 헤더 */
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  h1{font-size:25px;margin:0;font-weight:650;letter-spacing:-.03em;display:flex;align-items:center;gap:9px}
+  h1 .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);display:inline-block}
+  .refresh{margin-left:auto;background:var(--card);border:1px solid var(--line2);color:var(--text);
+    padding:9px 15px;border-radius:11px;font-size:13.5px;cursor:pointer;transition:.15s;font-weight:500}
+  .refresh:hover{border-color:var(--accent);color:var(--accent)}
+  .updated{width:100%;color:var(--faint);font-size:12.5px;margin-top:6px;letter-spacing:.01em}
+  /* 날짜 */
+  .datebar{display:flex;align-items:center;gap:9px;margin:26px 0 4px;flex-wrap:wrap}
+  .datebar button{background:var(--card);border:1px solid var(--line2);color:var(--text);
+    width:38px;height:40px;border-radius:11px;font-size:17px;cursor:pointer;transition:.15s}
+  .datebar button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+  .datebar button:disabled{opacity:.3;cursor:default}
+  .datebar select{flex:1;min-width:190px;padding:10px 13px;border:1px solid var(--line2);
+    border-radius:11px;background:var(--card);color:var(--text);font-size:15px;font-weight:600;cursor:pointer}
+  /* 통계: 미니멀 인라인 */
+  .stats{display:flex;gap:26px;flex-wrap:wrap;margin:22px 2px 4px;padding:16px 4px;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .stat b{font-size:23px;font-weight:650;letter-spacing:-.02em}
+  .stat span{font-size:12.5px;color:var(--muted);margin-left:7px}
+  .section-label{font-size:11px;font-weight:700;color:var(--faint);
+    text-transform:uppercase;letter-spacing:.08em;margin:22px 0 10px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{background:transparent;border:1px solid var(--line2);border-radius:999px;
+    padding:6px 13px;font-size:13px;cursor:pointer;user-select:none;transition:.13s;color:var(--text)}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .chip.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+  .chip .n{opacity:.55;margin-left:5px;font-variant-numeric:tabular-nums}
+  .chip.on .n{opacity:.75}
+  .searchbar{margin:22px 0 8px}
+  .searchbar input{width:100%;padding:13px 16px;border:1px solid var(--line2);
+    border-radius:12px;background:var(--card);color:var(--text);font-size:14.5px;transition:.15s}
+  .searchbar input:focus{outline:none;border-color:var(--accent)}
+  .count{font-size:12.5px;color:var(--muted);margin:8px 2px 16px;letter-spacing:.01em}
+  /* 카드 */
+  .grid{display:grid;gap:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:20px 22px;transition:.15s}
+  .card:hover{border-color:var(--line2)}
+  .card.open{border-color:var(--accent)}
+  .card .head{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+  .card .title{font-weight:640;font-size:16.5px;letter-spacing:-.01em;flex:1;line-height:1.45}
+  .card .caret{color:var(--faint);font-size:12px;margin-top:5px;transition:.2s;flex-shrink:0}
+  .card.open .caret{transform:rotate(90deg);color:var(--accent)}
+  .tags{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:11px}
+  .tag{font-size:11.5px;padding:3px 10px;border-radius:7px;background:var(--accent-soft);
+    color:var(--text);font-weight:600;border:1px solid var(--line2)}
+  .tag.topic{background:transparent;color:var(--muted);border:1px solid var(--line2);font-weight:500}
+  .ai-badge{font-size:10.5px;padding:3px 9px;border-radius:7px;background:var(--accent);
+    color:var(--bg);font-weight:700;letter-spacing:.02em;flex-shrink:0;margin-top:2px}
+  .snippet{color:var(--muted);font-size:14px;margin-top:11px;line-height:1.65}
+  /* 펼침 */
+  .detail{display:none;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+  .card.open .detail{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .block{margin:0 0 14px;padding:15px 17px;border-radius:13px;font-size:14.5px;line-height:1.72}
+  .block .lbl{font-size:11px;font-weight:750;letter-spacing:.05em;display:block;margin-bottom:8px;text-transform:uppercase}
+  .b-sum{background:transparent;border:1px solid var(--line2)} .b-sum .lbl{color:var(--muted)}
+  .b-term{background:var(--block-bg);border-left:2px solid var(--block-line)} .b-term .lbl{color:var(--text)}
+  .b-term dl{margin:0} .b-term dt{font-weight:650;margin-top:8px} .b-term dt:first-child{margin-top:0}
+  .b-term dd{margin:2px 0 0;color:var(--muted);font-size:13.5px}
+  .b-imp{background:var(--block-bg);border-left:2px solid var(--block-line)} .b-imp .lbl{color:var(--text)}
+  .b-sol{background:var(--block-bg);border-left:2px solid var(--block-line)} .b-sol .lbl{color:var(--text)}
+  .b-sol ul{margin:0;padding-left:19px} .b-sol li{margin:5px 0}
+  .noai{font-size:13.5px;color:var(--muted);background:transparent;border:1px dashed var(--line2);
+    padding:12px 15px;border-radius:12px}
+  .srclabel{font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.06em;margin:6px 0 9px;text-transform:uppercase}
+  .sources{display:flex;gap:8px;flex-wrap:wrap}
+  .src{font-size:12.5px;padding:7px 13px;border-radius:9px;border:1px solid var(--line2);
+    background:transparent;color:var(--text);text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:.13s}
+  .src:hover{border-color:var(--accent);color:var(--accent)}
+  .src::after{content:"↗";font-size:11px;opacity:.5}
+  mark.hl{background:var(--hl);color:inherit;border-radius:2px;padding:0 1px;
+    box-decoration-break:clone;-webkit-box-decoration-break:clone;font-weight:inherit}
+  .empty{text-align:center;color:var(--muted);padding:60px 0}
+  footer{margin-top:44px;padding-top:22px;border-top:1px solid var(--line);
+    text-align:center;color:var(--faint);font-size:12px;line-height:1.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="dot"></span>은행 뉴스 브리핑</h1>
+    <button class="refresh" id="refresh" title="최신 뉴스로 새로고침 (웹서버 모드에서는 실제로 새 뉴스를 수집합니다)">↻ 새로고침</button>
+    <span class="updated" id="updated"></span>
+  </header>
+
+  <div class="datebar">
+    <button id="prev" title="이전 날짜">‹</button>
+    <select id="dateSel"></select>
+    <button id="next" title="다음 날짜">›</button>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="section-label">은행별</div>
+  <div class="chips" id="bankChips"></div>
+  <div class="section-label">주제별</div>
+  <div class="chips" id="topicChips"></div>
+
+  <div class="searchbar"><input id="search" type="text" placeholder="제목·내용 검색…"></div>
+  <div class="count" id="count"></div>
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    규칙 기반 자동 수집 · 전 언론사(구글뉴스 검색) + 직접 RSS<br>
+    같은 사건은 하나로 묶고 언론사별 원문 링크를 함께 제공합니다.<br>
+    최신 뉴스로 갱신하려면 폴더의 <b>새로고침.bat</b> 을 실행하세요.
+  </footer>
+</div>
+
+<script>
+/*__DATA__*/
+(function(){
+  // 정적 모드(데이터 내장)면 즉시, 서버 모드면 /api/data 로 불러와 실행
+  if(window.BANK_NEWS){ boot(window.BANK_NEWS); }
+  else {
+    fetch("/api/data",{cache:"no-store"}).then(function(r){return r.json();}).then(boot)
+      .catch(function(){ var g=document.getElementById("grid"); if(g) g.innerHTML='<div class="empty">데이터를 불러오지 못했습니다.</div>'; });
+  }
+  function boot(D){
+  var grid = document.getElementById("grid");
+  if(!D || !D.dates || !D.dates.length){
+    grid.innerHTML='<div class="empty">데이터가 없습니다. <code>node fetch_news.js</code> 를 먼저 실행하세요.</div>'; return; }
+
+  var state = { date: D.dates[0], bank:null, topic:null, q:"" };
+  document.getElementById("updated").textContent = "최종 갱신 " + D.lastUpdatedKST;
+  document.getElementById("refresh").addEventListener("click", function(){
+    var b=this;
+    if(location.protocol.indexOf("http")===0){   // 서버 모드: 실제 뉴스 수집
+      b.textContent="수집 중…"; b.disabled=true;
+      fetch("/api/refresh",{method:"POST"}).then(function(r){return r.json();})
+        .then(function(){ location.reload(); })
+        .catch(function(){ b.textContent="↻ 새로고침"; b.disabled=false; alert("갱신에 실패했습니다."); });
+    } else { location.reload(); }   // 정적 파일 모드
+  });
+
+  var sel = document.getElementById("dateSel");
+  sel.innerHTML = D.dates.map(function(d){
+    var m = D.dayMeta[d];
+    return '<option value="'+d+'">'+fmtDate(d)+'  ·  '+m.count+'건'+(m.analyzed?'  ·  AI '+m.analyzed:'')+'</option>';
+  }).join("");
+  sel.value = state.date;
+  sel.addEventListener("change", function(){ state.date=sel.value; resetFilters(); renderAll(); });
+  document.getElementById("prev").addEventListener("click", function(){ step(1); });
+  document.getElementById("next").addEventListener("click", function(){ step(-1); });
+  function step(dir){
+    var i=D.dates.indexOf(state.date)+dir;
+    if(i<0||i>=D.dates.length) return;
+    state.date=D.dates[i]; sel.value=state.date; resetFilters(); renderAll();
+  }
+  function updateNav(){
+    var i=D.dates.indexOf(state.date);
+    document.getElementById("prev").disabled = i>=D.dates.length-1;
+    document.getElementById("next").disabled = i<=0;
+  }
+  function resetFilters(){ state.bank=null; state.topic=null; state.q=""; document.getElementById("search").value=""; }
+  document.getElementById("search").addEventListener("input", function(e){ state.q=e.target.value.trim().toLowerCase(); renderCards(); });
+
+  function fmtDate(d){ var days=["일","월","화","수","목","금","토"];
+    var dt=new Date(d+"T00:00:00+09:00"); return d+" ("+days[dt.getDay()]+")"; }
+  function esc(s){ return (s||"").replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];}); }
+  // 형광펜: 은행/기관명이 나온 부분을 <mark>로 감싼다 (긴 단어 우선)
+  var HLre=null;
+  if(D.highlightTerms && D.highlightTerms.length){
+    var esc_=D.highlightTerms.map(function(t){return t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");});
+    HLre=new RegExp("("+esc_.join("|")+")","g");
+  }
+  function hl(s){ var e=esc(s); return HLre? e.replace(HLre,'<mark class="hl">$1</mark>') : e; }
+
+  function renderAll(){
+    var m=D.dayMeta[state.date], arts=D.byDate[state.date];
+    var multi=arts.filter(function(a){return a.sources.length>1;}).length;
+    document.getElementById("stats").innerHTML =
+      stat(m.count,"기사") + stat(Object.keys(m.byBank).length,"은행") +
+      stat(m.analyzed,"AI 분석") + stat(multi,"멀티 언론사");
+    renderChips("bankChips", m.byBank, "bank");
+    renderChips("topicChips", m.byTopic, "topic");
+    updateNav(); renderCards();
+  }
+  function stat(n,l){ return '<span class="stat"><b>'+n+'</b><span>'+l+'</span></span>'; }
+
+  function renderChips(id,obj,key){
+    var el=document.getElementById(id);
+    var entries=Object.entries(obj).sort(function(a,b){return b[1]-a[1];});
+    if(!entries.length){ el.innerHTML='<span style="color:var(--faint);font-size:13px">해당 없음</span>'; return; }
+    el.innerHTML=entries.map(function(e){
+      var on=state[key]===e[0]?' on':'';
+      return '<span class="chip'+on+'" data-v="'+esc(e[0])+'">'+esc(e[0])+'<span class="n">'+e[1]+'</span></span>';
+    }).join("");
+    el.querySelectorAll(".chip").forEach(function(c){
+      c.addEventListener("click", function(){
+        state[key]=state[key]===c.dataset.v?null:c.dataset.v;
+        renderChips(id,obj,key); renderCards();
+      });
+    });
+  }
+
+  function renderCards(){
+    var list=D.byDate[state.date].filter(function(a){
+      if(state.bank && a.banks.indexOf(state.bank)<0) return false;
+      if(state.topic && a.topics.indexOf(state.topic)<0) return false;
+      if(state.q && (a.title+" "+a.summary+" "+(a.analysis?a.analysis.summary:"")).toLowerCase().indexOf(state.q)<0) return false;
+      return true;
+    });
+    document.getElementById("count").textContent = list.length+"건";
+    if(!list.length){ grid.innerHTML='<div class="empty">조건에 맞는 기사가 없습니다.</div>'; return; }
+    grid.innerHTML=list.map(card).join("");
+    grid.querySelectorAll(".card .head").forEach(function(h){
+      h.addEventListener("click", function(){ h.parentElement.classList.toggle("open"); });
+    });
+  }
+
+  function card(a){
+    var an=a.analysis;
+    var bankTags=a.banks.map(function(b){return '<span class="tag">'+esc(b)+'</span>';}).join("");
+    var topicTags=a.topics.map(function(t){return '<span class="tag topic">'+esc(t)+'</span>';}).join("");
+    var aiBadge=an?'<span class="ai-badge">AI 분석</span>':'';
+    var srcs=a.sources.map(function(s){
+      return '<a class="src" href="'+esc(s.link)+'" target="_blank" rel="noopener">'+esc(s.source)+'</a>';
+    }).join("");
+    var snipText=(an&&an.summary)?an.summary:a.summary;
+    var snippet=snipText?'<div class="snippet">'+hl(snipText.slice(0,150))+'…</div>':'';
+
+    var detail;
+    if(an){
+      var termsHtml="";
+      if(an.terms&&an.terms.length){
+        var dl=an.terms.map(function(t){return '<dt>'+esc(t.term)+'</dt><dd>'+esc(t.desc)+'</dd>';}).join("");
+        termsHtml='<div class="block b-term"><span class="lbl">용어 풀이</span><dl>'+dl+'</dl></div>';
+      }
+      var sol=(an.solutions||[]).map(function(x){return '<li>'+esc(x)+'</li>';}).join("");
+      detail=
+        '<div class="block b-sum"><span class="lbl">요약</span>'+hl(an.summary||a.summary)+'</div>'+
+        termsHtml+
+        '<div class="block b-imp"><span class="lbl">은행에 미치는 영향</span>'+esc(an.impact||"")+'</div>'+
+        '<div class="block b-sol"><span class="lbl">은행의 해결책·대응방안</span><ul>'+sol+'</ul></div>';
+    } else {
+      detail='<div class="block b-sum"><span class="lbl">요약</span>'+(a.summary?hl(a.summary):"(요약 없음 — 원문 링크 참고)")+'</div>'+
+        '<div class="noai">AI 상세 분석은 아직 없습니다. 새로고침.bat 자동 실행 시 채워집니다.</div>';
+    }
+
+    return '<div class="card">'+
+      '<div class="head"><span class="title">'+hl(a.title)+'</span>'+aiBadge+'<span class="caret">▶</span></div>'+
+      '<div class="tags">'+bankTags+topicTags+'</div>'+snippet+
+      '<div class="detail">'+detail+
+        '<div class="srclabel">원문 링크 '+a.sources.length+'</div>'+
+        '<div class="sources">'+srcs+'</div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  renderAll();
+  }
+})();
+</script>
+</body>
+</html>

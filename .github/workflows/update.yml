@@ -1,0 +1,70 @@
+name: bank-news-daily
+
+# 매일 KST 07:00 (UTC 22:00) 자동 실행 + 수동 실행 버튼
+on:
+  schedule:
+    - cron: "0 22 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # 상태 파일(store/analysis) 커밋
+  pages: write      # GitHub Pages 배포
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 뉴스 수집 (무료)
+        run: node fetch_news.js
+
+      - name: AI 분석 (ANTHROPIC_API_KEY 시크릿이 있을 때만)
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
+        run: |
+          node make_pending.js
+          node analyze_api.js
+          node fetch_news.js --build-only
+
+      - name: 상태 파일 커밋 (누적 유지)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add store.json analysis.json 2>/dev/null || true
+          git commit -m "chore: daily news update" || echo "변경 없음"
+          git push || echo "push 생략"
+
+      - name: 사이트 조립 (index.html만 배포)
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+
+      - name: Pages 설정
+        uses: actions/configure-pages@v5
+
+      - name: 아티팩트 업로드
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: GitHub Pages 배포
+        id: deployment
+        uses: actions/deploy-pages@v4

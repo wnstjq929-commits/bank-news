@@ -1,0 +1,12 @@
+# 빌드 산출물 (워크플로우가 매번 새로 생성)
+index.html
+data.json
+
+# 작업/로그
+_work/
+update.log
+
+# 기타
+node_modules/
+.DS_Store
+Thumbs.db
