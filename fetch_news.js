@@ -40,6 +40,7 @@ const BANKS = [
   { name: "케이뱅크",   aliases: ["케이뱅크", "케뱅"] },
   { name: "토스뱅크",   aliases: ["토스뱅크"] },
   { name: "SC·씨티",    aliases: ["SC제일", "씨티은행", "한국씨티"] },
+  { name: "iM뱅크",     aliases: ["iM뱅크", "IM뱅크", "아이엠뱅크", "대구은행", "DGB금융", "DGB대구"] },
   { name: "저축은행",   aliases: ["저축은행", "SBI저축", "OK저축"] },
   { name: "금융당국",   aliases: ["금융감독원", "금감원", "금융위원회", "금융위", "예금보험공사", "예보"] },
 ];
@@ -208,6 +209,14 @@ async function main() {
   }
   const cutoff = kstDate(Date.now() - 30 * 864e5);
   let all = [...byId.values()].filter((a) => a.dateKST >= cutoff);
+
+  // 은행/주제 목록이 바뀌어도 기존 기사에 소급 적용되도록 재분류
+  for (const a of all) {
+    const text = a.title + " " + (a.summary || "");
+    a.banks = matchList(text, BANKS);
+    const tp = matchList(text, TOPICS);
+    a.topics = tp.length ? tp : ["기타"];
+  }
 
   // AI 분석 병합
   let analysis = {};
